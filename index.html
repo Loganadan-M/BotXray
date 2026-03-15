@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced Anti-Bot Detector</title>
+  <style>
+    :root {
+      --bg-top: #f8fbff;
+      --bg-bottom: #edf5ff;
+      --text: #10223f;
+      --muted: #53627d;
+      --card: rgba(255, 255, 255, 0.9);
+      --card-border: rgba(16, 34, 63, 0.12);
+      --accent: #0891b2;
+      --accent-strong: #0c4a6e;
+      --success: #059669;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --ink-soft: #334155;
+      --shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: clamp(12px, 3vw, 24px);
+      font-family: "Space Grotesk", "Sora", "Avenir Next", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1000px 640px at 0% 0%, #dbeafe 0%, transparent 60%),
+        radial-gradient(900px 540px at 100% 100%, #dcfce7 0%, transparent 55%),
+        linear-gradient(145deg, var(--bg-top), var(--bg-bottom));
+      overflow-x: hidden;
+    }
+
+    .app-shell {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+      width: 100%;
+      overflow-x: hidden;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(16px, 3vw, 28px);
+      border-radius: calc(var(--radius) + 2px);
+      background: linear-gradient(132deg, #0f172a 0%, #164e63 56%, #14532d 100%);
+      color: #f8fafc;
+      box-shadow: var(--shadow);
+      animation: riseIn 0.45s ease both;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: -66% auto auto 64%;
+      width: 340px;
+      height: 340px;
+      border-radius: 50%;
+      background: radial-gradient(circle at center, rgba(34, 211, 238, 0.38), rgba(16, 185, 129, 0.08) 60%, transparent 75%);
+      pointer-events: none;
+    }
+
+    .hero h1 {
+      margin: 0 0 8px 0;
+      font-size: clamp(1.5rem, 3vw, 2.3rem);
+      letter-spacing: -0.02em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 76ch;
+      color: rgba(248, 250, 252, 0.91);
+      font-size: clamp(0.95rem, 2vw, 1.04rem);
+      line-height: 1.52;
+    }
+
+    .section {
+      margin: 0;
+      padding: clamp(12px, 2vw, 20px);
+      border-radius: var(--radius);
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(7px);
+      animation: riseIn 0.5s ease both;
+      overflow-x: auto;
+      overflow-y: visible;
+    }
+
+    h2 {
+      margin: 0 0 12px 0;
+      color: var(--accent-strong);
+      font-size: 1.04rem;
+      letter-spacing: 0.01em;
+    }
+
+    .controls-wrap {
+      display: grid;
+      gap: 12px;
+    }
+
+    .controls,
+    .quick-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .run-btn,
+    .subtle-btn,
+    .mini-btn {
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    }
+
+    .run-btn {
+      padding: 11px 20px;
+      color: #f8fafc;
+      background: linear-gradient(135deg, var(--accent) 0%, #0ea5e9 45%, #22c55e 100%);
+      box-shadow: 0 12px 26px rgba(8, 145, 178, 0.28);
+    }
+
+    .run-btn:hover:not(:disabled),
+    .subtle-btn:hover:not(:disabled),
+    .mini-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    .run-btn:disabled,
+    .subtle-btn:disabled,
+    .mini-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .subtle-btn {
+      padding: 9px 14px;
+      color: #0f172a;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(15, 23, 42, 0.14);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+    }
+
+    .mini-btn {
+      padding: 5px 11px;
+      font-size: 0.78rem;
+      color: #0f172a;
+      background: rgba(224, 242, 254, 0.86);
+      border: 1px solid rgba(8, 145, 178, 0.24);
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 6px 11px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.66);
+      border: 1px solid rgba(83, 98, 125, 0.22);
+    }
+
+    .status.loading {
+      color: var(--warning);
+      border-color: rgba(217, 119, 6, 0.35);
+      background: rgba(254, 243, 199, 0.7);
+    }
+
+    .status.loading::before {
+      content: "";
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      margin-right: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse 0.9s ease-in-out infinite;
+      vertical-align: middle;
+    }
+
+    .status.ready {
+      color: var(--success);
+      border-color: rgba(5, 150, 105, 0.3);
+      background: rgba(220, 252, 231, 0.72);
+    }
+
+    .loading-meter {
+      width: min(420px, 100%);
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.28);
+      overflow: hidden;
+      border: 1px solid rgba(100, 116, 139, 0.16);
+    }
+
+    .loading-meter > span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #22c55e 0%, #06b6d4 52%, #0284c7 100%);
+      transition: width 0.18s ease;
+    }
+
+    #scoreSection {
+      border-radius: 14px;
+      border: 1px solid rgba(8, 145, 178, 0.25);
+      background: linear-gradient(160deg, rgba(224, 242, 254, 0.72), rgba(220, 252, 231, 0.64));
+      padding: 12px 14px;
+      display: none;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    #scoreSection h2 {
+      margin-bottom: 4px;
+      color: #155e75;
+      font-size: 1rem;
+    }
+
+    #riskLevel {
+      color: var(--ink-soft);
+      font-weight: 600;
+      font-size: 0.92rem;
+      line-height: 1.4;
+    }
+
+    .score {
+      font-size: clamp(1.9rem, 4vw, 2.35rem);
+      font-weight: 800;
+      color: #075985;
+      letter-spacing: -0.03em;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    .kpi {
+      border: 1px solid rgba(8, 145, 178, 0.21);
+      background: rgba(255, 255, 255, 0.72);
+      border-radius: 10px;
+      padding: 10px;
+      display: grid;
+      gap: 2px;
+    }
+
+    .kpi .label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      font-weight: 700;
+    }
+
+    .kpi .value {
+      font-size: 1rem;
+      color: #0f172a;
+      font-weight: 800;
+    }
+
+    #summaryCard {
+      border: 1px solid rgba(8, 145, 178, 0.2);
+      border-radius: 10px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.66);
+      display: grid;
+      gap: 4px;
+      font-size: 0.88rem;
+      color: #334155;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1.2fr 0.9fr 0.8fr auto auto auto;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .toolbar input,
+    .toolbar select {
+      width: 100%;
+      border: 1px solid rgba(15, 23, 42, 0.16);
+      border-radius: 10px;
+      padding: 9px 11px;
+      font-size: 0.9rem;
+      color: #0f172a;
+      background: rgba(255, 255, 255, 0.82);
+    }
+
+    .toolbar .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: #334155;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .toolbar-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+      color: #64748b;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .tables-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(16, 34, 63, 0.1);
+      text-align: left;
+      vertical-align: top;
+      word-break: break-word;
+    }
+
+    th {
+      color: #334155;
+      font-size: 0.76rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      position: sticky;
+      top: 0;
+      background: rgba(255, 255, 255, 0.95);
+      z-index: 1;
+    }
+
+    tr:not(:first-child):hover td { background: rgba(8, 145, 178, 0.07); }
+
+    td small {
+      display: block;
+      margin-top: 4px;
+      color: #64748b;
+      font-size: 0.76rem;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: #0f172a;
+      background: rgba(15, 23, 42, 0.08);
+    }
+
+    .score-cell {
+      display: grid;
+      gap: 4px;
+    }
+
+    .score-bar {
+      width: 100%;
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.28);
+      overflow: hidden;
+    }
+
+    .score-bar > span {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #22c55e 0%, #f59e0b 50%, #dc2626 100%);
+    }
+
+    .evidence-cell {
+      max-width: clamp(150px, 30vw, 250px);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #334155;
+      margin-bottom: 5px;
+      font-size: 0.83rem;
+    }
+
+    #explanationsList {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+      color: #1f2937;
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+
+    #explanationsList li {
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      max-width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    .danger { color: var(--danger); font-weight: 700; }
+    .warning { color: var(--warning); font-weight: 700; }
+    .success { color: var(--success); font-weight: 700; }
+
+    details {
+      border-radius: 12px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      background: rgba(255, 255, 255, 0.66);
+      overflow: hidden;
+    }
+
+    details > summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 10px 12px;
+      font-weight: 700;
+      color: #0f172a;
+      background: rgba(226, 232, 240, 0.5);
+      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    details > summary::-webkit-details-marker { display: none; }
+
+    pre {
+      margin: 0;
+      padding: 14px;
+      border-radius: 0;
+      overflow-x: auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      max-height: 430px;
+      background: #0b1120;
+      color: #e2e8f0;
+      border: none;
+      line-height: 1.42;
+      font-size: 0.85rem;
+      font-family: "JetBrains Mono", "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+    }
+
+    #evidenceOutput {
+      max-height: 280px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; transform: scale(0.85); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes riseIn {
+      from { opacity: 0; transform: translateY(7px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 1080px) {
+      .toolbar {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .kpi-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 900px) {
+      .tables-grid {
+        grid-template-columns: 1fr;
+      }
+
+      th, td {
+        padding: 8px 10px;
+        font-size: 0.9rem;
+      }
+    }
+
+    @media (max-width: 760px) {
+      body {
+        padding: clamp(8px, 2vw, 16px);
+      }
+
+      .app-shell {
+        gap: 12px;
+      }
+
+      .section {
+        padding: clamp(10px, 2vw, 16px);
+      }
+
+      .controls,
+      .quick-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      .run-btn,
+      .subtle-btn {
+        width: 100%;
+        padding: 10px 14px;
+      }
+
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .tables-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      h2 {
+        font-size: 0.95rem;
+      }
+
+      #explanationsList {
+        padding-left: 16px;
+        gap: 6px;
+      }
+
+      pre {
+        font-size: 0.78rem;
+        padding: 10px;
+        max-height: 250px;
+      }
+
+      table {
+        font-size: 0.8rem;
+      }
+
+      th, td {
+        padding: 6px 8px;
+      }
+
+      .evidence-cell {
+        max-width: clamp(120px, 25vw, 200px);
+        font-size: 0.75rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 6px;
+      }
+
+      .app-shell {
+        gap: 8px;
+      }
+
+      .section {
+        padding: 8px;
+        border-radius: 12px;
+      }
+
+      .hero {
+        padding: clamp(12px, 2vw, 16px);
+      }
+
+      .hero h1 {
+        font-size: clamp(1.2rem, 2.5vw, 1.5rem);
+        margin-bottom: 6px;
+      }
+
+      .hero p {
+        font-size: 0.85rem;
+        line-height: 1.4;
+      }
+
+      h2 {
+        font-size: 0.85rem;
+        margin-bottom: 8px;
+      }
+
+      .run-btn,
+      .subtle-btn {
+        font-size: 0.8rem;
+        padding: 8px 12px;
+      }
+
+      .kpi-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .kpi-item h3 {
+        font-size: 0.75rem;
+      }
+
+      .kpi-item .value {
+        font-size: 1rem;
+      }
+
+      pre {
+        font-size: 0.7rem;
+        padding: 8px;
+        max-height: 200px;
+      }
+
+      table {
+        font-size: 0.75rem;
+      }
+
+      th, td {
+        padding: 4px 6px;
+      }
+
+      .evidence-cell {
+        max-width: clamp(80px, 20vw, 150px);
+        font-size: 0.7rem;
+      }
+
+      #explanationsList {
+        padding-left: 14px;
+        font-size: 0.8rem;
+        gap: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <h1>🛡️ Advanced Anti-Bot Detector</h1>
+      <p>Defensive anti-bot telemetry with category scoring, consistency analysis, and operator-facing explainability.</p>
+    </header>
+
+    <section class="section controls-wrap">
+      <div class="controls">
+        <button class="run-btn" id="runDetectionBtn" type="button" onclick="runDetection()">Run Full Detection</button>
+        <span id="detectionStatus" class="status ready">Ready</span>
+        <div class="loading-meter" aria-hidden="true"><span id="loadingMeterFill"></span></div>
+      </div>
+
+      <div class="quick-actions">
+        <button class="subtle-btn" id="copyJsonBtn" type="button">Copy JSON</button>
+        <button class="subtle-btn" id="downloadJsonBtn" type="button">Download JSON</button>
+        <button class="subtle-btn" id="toggleJsonBtn" type="button">Show JSON</button>
+        <button class="subtle-btn" id="triggerChallengeBtn" type="button" style="display: none; background: #f59e0b; color: white;">🔐 Trigger Challenge</button>
+      </div>
+
+      <div id="scoreSection">
+        <h2>Bot Score: <span id="botScore" class="score">0</span>/25</h2>
+        <div id="riskLevel"></div>
+
+        <div class="kpi-grid">
+          <div class="kpi"><span class="label">Risk</span><span id="kpiRisk" class="value">-</span></div>
+          <div class="kpi"><span class="label">Action</span><span id="kpiAction" class="value">-</span></div>
+          <div class="kpi"><span class="label">Confidence</span><span id="kpiConfidence" class="value">-</span></div>
+          <div class="kpi"><span class="label">Strong Hits</span><span id="kpiStrong" class="value">-</span></div>
+          <div class="kpi"><span class="label">Weak Mismatch</span><span id="kpiWeak" class="value">-</span></div>
+          <div class="kpi"><span class="label">Elapsed</span><span id="kpiElapsed" class="value">-</span></div>
+        </div>
+
+        <div id="summaryCard"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Signal Explorer</h2>
+      <div class="toolbar">
+        <input id="signalSearchInput" type="search" placeholder="Search signal key, label, category, or evidence...">
+        <select id="signalCategoryFilter">
+          <option value="all">All categories</option>
+        </select>
+        <select id="signalStatusFilter">
+          <option value="all">All statuses</option>
+          <option value="suspicious">Suspicious</option>
+          <option value="ok">OK</option>
+          <option value="unavailable">Unavailable</option>
+          <option value="error">Error</option>
+        </select>
+        <label class="toggle"><input id="suspiciousOnlyToggle" type="checkbox"> Suspicious only</label>
+        <label class="toggle"><input id="weakMismatchOnlyToggle" type="checkbox"> Weak mismatches only</label>
+        <button class="subtle-btn" id="clearSignalFiltersBtn" type="button">Clear Filters</button>
+      </div>
+      <div class="toolbar-meta">
+        <span id="signalFilterMeta">Showing 0 of 0 signals</span>
+      </div>
+
+      <div class="tables-grid">
+        <section>
+          <h2>Strong Bot Signals</h2>
+          <table id="strongTable">
+            <tr><th>Signal</th><th>Category</th><th>Status</th><th>Score</th><th>Evidence</th></tr>
+          </table>
+        </section>
+
+        <section>
+          <h2>Weak Signal Consistency</h2>
+          <table id="weakTable">
+            <tr><th>Check</th><th>Status</th><th>Category</th></tr>
+          </table>
+        </section>
+      </div>
+    </section>
+
+    <div class="tables-grid">
+      <section class="section">
+        <h2>Category Breakdown</h2>
+        <table id="categoryTable">
+          <tr><th>Category</th><th>Score</th><th>Status</th></tr>
+        </table>
+      </section>
+
+      <section class="section">
+        <h2>Explanations</h2>
+        <ul id="explanationsList"></ul>
+      </section>
+    </div>
+
+    <section class="section">
+      <h2>Evidence Inspector</h2>
+      <pre id="evidenceOutput">Click an "Inspect" button on a signal row to view full evidence payload.</pre>
+    </section>
+
+    <section class="section">
+      <details id="jsonPanel">
+        <summary>Full Results JSON</summary>
+        <pre id="jsonOutput">Run detection to see results</pre>
+      </details>
+    </section>
+  </div>
+
+  <script type="module">
+    // Wait for the detection to complete, then show challenge button if needed
+    let lastDetectionResult = null;
+
+    window.addEventListener('resultsRendered', (event) => {
+      lastDetectionResult = event.detail;
+      const challengeBtn = document.getElementById('triggerChallengeBtn');
+
+      if (lastDetectionResult && lastDetectionResult.score100 >= 60) {
+        challengeBtn.style.display = 'block';
+      } else {
+        challengeBtn.style.display = 'none';
+      }
+    });
+
+    // Handle challenge button click
+    document.getElementById('triggerChallengeBtn').addEventListener('click', () => {
+      if (lastDetectionResult) {
+        // Import and use botChallenge
+        import('./src/security/botChallenge.js').then(({ botChallenge }) => {
+          const riskScore = lastDetectionResult.score100;
+          botChallenge.triggerRandomChallenge(riskScore);
+        });
+      }
+    });
+  </script>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
+

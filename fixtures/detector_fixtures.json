@@ -1,0 +1,149 @@
+{
+  "schemaVersion": "1.0.0",
+  "fixtures": [
+    {
+      "id": "normal_chrome_like",
+      "description": "Expected low risk with consistent signals and regular interaction.",
+      "signals": {
+        "webdriverTrue": false,
+        "playwrightArtifacts": false,
+        "seleniumArtifacts": false,
+        "workerMismatch": false,
+        "platformMismatch": false,
+        "canvasOutputUnstable": false,
+        "audioOutputUnstable": false,
+        "noHumanInteraction": false
+      },
+      "expected": {
+        "riskLabel": "LOW",
+        "maxScore100": 25
+      }
+    },
+    {
+      "id": "webdriver_true",
+      "description": "Direct webdriver presence should escalate aggressively.",
+      "signals": {
+        "webdriverTrue": true,
+        "iframeWebdriverTrue": true,
+        "playwrightArtifacts": false,
+        "seleniumArtifacts": false,
+        "workerMismatch": true,
+        "platformMismatch": false
+      },
+      "expected": {
+        "riskLabel": "HIGH",
+        "minScore100": 58
+      }
+    },
+    {
+      "id": "playwright_artifacts",
+      "description": "Playwright globals and suspicious automation markers present.",
+      "signals": {
+        "webdriverTrue": false,
+        "playwrightArtifacts": true,
+        "domAutomationGlobals": true,
+        "cdpStackHook": true,
+        "workerMismatch": true
+      },
+      "expected": {
+        "riskLabel": "HIGH",
+        "minScore100": 58
+      }
+    },
+    {
+      "id": "ua_platform_inconsistent",
+      "description": "Multiple consistency mismatches without hard automation evidence.",
+      "signals": {
+        "webdriverTrue": false,
+        "platformMismatch": true,
+        "clientHintsMismatch": true,
+        "languageInconsistent": true,
+        "timezoneLocaleMismatch": true,
+        "screenGeometryInconsistent": true
+      },
+      "expected": {
+        "riskLabel": "MEDIUM",
+        "maxScore100": 70
+      }
+    },
+    {
+      "id": "zero_plugin_chromium",
+      "description": "Privacy profile with no plugins should not trigger hard block alone.",
+      "signals": {
+        "webdriverTrue": false,
+        "zeroPluginsChromium": true,
+        "pluginMimeInconsistent": true,
+        "webrtcNoHostCandidate": true,
+        "noHumanInteraction": false
+      },
+      "expected": {
+        "riskLabel": "MEDIUM",
+        "maxScore100": 60
+      }
+    },
+    {
+      "id": "headless_cluster",
+      "description": "Headless UA corroborated by software renderer + unstable graphics probe should escalate.",
+      "signals": {
+        "headlessTokenInUA": true,
+        "headlessAutomationCluster": true,
+        "swiftShaderOrNoWebGL": true,
+        "canvasOutputUnstable": true,
+        "webdriverTrue": false
+      },
+      "expected": {
+        "riskLabel": "MEDIUM",
+        "minScore100": 42
+      }
+    },
+    {
+      "id": "scripted_no_activation_cluster",
+      "description": "Script-triggered run with no activation and unstable graphics should escalate to monitoring.",
+      "signals": {
+        "programmaticNoActivation": true,
+        "scriptedInvocationStack": true,
+        "canvasOutputUnstable": true,
+        "offscreenCanvasMismatch": true,
+        "webdriverTrue": false
+      },
+      "expected": {
+        "riskLabel": "MEDIUM",
+        "minScore100": 36
+      }
+    },
+    {
+      "id": "no_interaction",
+      "description": "Idle session with no human events should only lightly penalize.",
+      "signals": {
+        "noHumanInteraction": true,
+        "lowInteractionEntropy": true,
+        "suspiciousClickCadence": false,
+        "webdriverTrue": false
+      },
+      "expected": {
+        "riskLabel": "LOW",
+        "maxScore100": 35
+      }
+    },
+    {
+      "id": "privacy_hardened_legit",
+      "description": "Legitimate privacy-hardened browser with unavailable APIs.",
+      "signals": {
+        "webdriverTrue": false,
+        "clientHintsMismatch": false,
+        "permissionsQueryPatched": false,
+        "webrtcNoHostCandidate": true,
+        "zeroPluginsChromium": true,
+        "canvasOutputUnstable": false
+      },
+      "weakChecksUnavailable": [
+        "notificationPermissionConsistent",
+        "workerNavigatorConsistent"
+      ],
+      "expected": {
+        "riskLabel": "LOW",
+        "maxScore100": 45
+      }
+    }
+  ]
+}
